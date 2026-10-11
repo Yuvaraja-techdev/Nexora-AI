@@ -21,78 +21,74 @@ Nexora AI is designed to replicate and expand upon state-of-the-art AI workspace
 
 ```mermaid
 flowchart TD
-    subgraph Client ["Client Browser (React 19 + Redux + Tailwind CSS)"]
-        UI["Nexora UI & Monaco Editor"]
-        FB_Client["Firebase Client SDK (Google Auth)"]
+    subgraph ClientLayer ["Client Browser - React 19 and Redux"]
+        UI["Nexora Workspace UI and Monaco Editor"]
+        FB_Client["Firebase Client SDK - Google Auth"]
     end
 
-    subgraph Gateway ["API Gateway (Port 8000)"]
-        GW["Express Gateway + Cookie Parser + CORS"]
-        AuthMiddleware["protect Middleware (Redis Session Check)"]
-        Proxy["express-http-proxy (Header Injection: x-user-id)"]
+    subgraph GatewayLayer ["API Gateway - Port 8000"]
+        GW["Express Gateway - CORS and Cookie Parser"]
+        AuthMiddleware["protect Middleware - Session Guard"]
+        Proxy["Proxy Layer - Header Injection x-user-id"]
     end
 
-    subgraph DataStores ["Storage & Cache Infrastructure"]
-        Redis[("Redis (Port 6379)\nDistributed Sessions & Deduplication")]
-        Mongo[("MongoDB Atlas\nUsers, Messages, Conversations, Payments")]
-        S3[("AWS S3 Bucket\nGenerated Documents & Media")]
-        VectorDB[("Pinecone / Vector Store\nPDF Embeddings & RAG")]
+    subgraph DataLayer ["Data and Cache Infrastructure"]
+        Redis[("Redis Cache - Port 6379")]
+        Mongo[("MongoDB Atlas Database")]
+        S3["AWS S3 Storage - Artifacts"]
+        VectorDB[("Vector DB - Document Embeddings")]
     end
 
-    subgraph Microservices ["Backend Microservices"]
-        AuthService["Auth Service (Port 8001)\nFirebase Admin Verification"]
-        ChatService["Chat Service (Port 8002)\nHistory, Threads & Messages"]
-        AgentService["Agent Service (Port 8003)\nLangGraph Multi-Agent Engine"]
-        BillingService["Billing Service (Port 8004)\nRazorpay Orders & Credits"]
+    subgraph ServiceLayer ["Microservices Layer"]
+        AuthService["Auth Service - Port 8001"]
+        ChatService["Chat Service - Port 8002"]
+        AgentService["Agent Service - Port 8003"]
+        BillingService["Billing Service - Port 8004"]
     end
 
-    subgraph LangGraph ["LangGraph Multi-Agent Orchestration (Agent Service)"]
-        RouterNode["Router Node (Intent Classifier)"]
-        ChatAgent["Chat Agent (General Conversational)"]
-        SearchAgent["Search Agent (Tavily Live Web Search)"]
-        CodingAgent["Coding Agent (Multi-file Code & Artifacts)"]
-        PDFAgent["PDF Agent (PDFKit Document Generation)"]
-        PPTAgent["PPT Agent (PptxGenJS Slide Generator)"]
-        VisionAgent["Vision Agent (Image Generation)"]
-        AnalyzerAgent["Image Analyzer (Vision Inspection)"]
-        RAGAgent["PDF RAG Agent (Document Vector Search)"]
+    subgraph LangGraphLayer ["LangGraph Multi-Agent Engine"]
+        RouterNode{"Router Node - Intent Classifier"}
+        ChatAgent["Chat Agent - Conversation"]
+        SearchAgent["Search Agent - Tavily Search"]
+        CodingAgent["Coding Agent - Multi-File Artifacts"]
+        PDFAgent["PDF Agent - Document Generator"]
+        PPTAgent["PPT Agent - Presentation Generator"]
+        VisionAgent["Vision Agent - Image Generator"]
+        AnalyzerAgent["Image Analyzer - Vision Inspection"]
+        RAGAgent["PDF RAG Agent - Vector Search"]
     end
 
-    %% Client to Gateway
-    UI -->|"HTTP Requests + Cookies"| GW
+    UI -->|"HTTP Requests with Cookies"| GW
     FB_Client -.->|"Google OAuth Token"| UI
 
-    %% Gateway Routing
-    GW -->|"/api/auth/*"| AuthService
+    GW -->|"Route /api/auth"| AuthService
     GW --> AuthMiddleware
-    AuthMiddleware -->|"Validate Session"| Redis
+    AuthMiddleware -->|"Check Session"| Redis
     AuthMiddleware --> Proxy
-    Proxy -->|"/api/chat/* (x-user-id)"| ChatService
-    Proxy -->|"/api/billing/* (x-user-id)"| BillingService
-    Proxy -->|"/api/agent/* (x-user-id)"| AgentService
+    Proxy -->|"Forward with x-user-id"| ChatService
+    Proxy -->|"Forward with x-user-id"| BillingService
+    Proxy -->|"Forward with x-user-id"| AgentService
 
-    %% Services to DB
     AuthService --> Mongo
     AuthService --> Redis
     ChatService --> Mongo
     BillingService --> Mongo
-    BillingService -->|"Credit Sync"| Redis
+    BillingService -->|"Sync Credits"| Redis
 
-    %% Agent Flow
     AgentService --> RouterNode
-    RouterNode -->|"chat"| ChatAgent
-    RouterNode -->|"search"| SearchAgent
-    RouterNode -->|"coding"| CodingAgent
-    RouterNode -->|"pdf"| PDFAgent
-    RouterNode -->|"ppt"| PPTAgent
-    RouterNode -->|"vision"| VisionAgent
-    RouterNode -->|"imageAnalyzer"| AnalyzerAgent
-    RouterNode -->|"pdfRag"| RAGAgent
+    RouterNode -->|"chat intent"| ChatAgent
+    RouterNode -->|"search intent"| SearchAgent
+    RouterNode -->|"coding intent"| CodingAgent
+    RouterNode -->|"pdf intent"| PDFAgent
+    RouterNode -->|"ppt intent"| PPTAgent
+    RouterNode -->|"vision intent"| VisionAgent
+    RouterNode -->|"analyzer intent"| AnalyzerAgent
+    RouterNode -->|"pdfRag intent"| RAGAgent
 
-    SearchAgent -->|"Search Findings"| ChatAgent
-    RAGAgent <-->|"Similarity Search"| VectorDB
-    PDFAgent -->|"Upload Generated File"| S3
-    PPTAgent -->|"Upload Generated File"| S3
+    SearchAgent -->|"Pipes Search Data"| ChatAgent
+    RAGAgent -->|"Similarity Query"| VectorDB
+    PDFAgent -->|"Save PDF"| S3
+    PPTAgent -->|"Save PPTX"| S3
 ```
 
 ---
